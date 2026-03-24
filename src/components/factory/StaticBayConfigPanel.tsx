@@ -6,9 +6,10 @@ import { Separator } from '@/components/ui/separator'
 import { X, Check } from '@phosphor-icons/react'
 
 interface StaticBayConfigPanelProps {
-  onSave: (productName: string, cycleTime: number, capacity: number) => void
+  onSave: (bayName: string, productName: string, cycleTime: number, capacity: number) => void
   onCancel: () => void
   initialData?: {
+    bayName: string
     productName: string
     cycleTime: number
     capacity: number
@@ -16,6 +17,7 @@ interface StaticBayConfigPanelProps {
 }
 
 export function StaticBayConfigPanel({ onSave, onCancel, initialData }: StaticBayConfigPanelProps) {
+  const [bayName, setBayName] = useState(initialData?.bayName || '')
   const [productName, setProductName] = useState(initialData?.productName || '')
   const [cycleTime, setCycleTime] = useState(initialData?.cycleTime.toString() || '10')
   const [capacity, setCapacity] = useState(initialData?.capacity.toString() || '1')
@@ -24,8 +26,8 @@ export function StaticBayConfigPanel({ onSave, onCancel, initialData }: StaticBa
     const ct = parseFloat(cycleTime)
     const cap = parseInt(capacity, 10)
     
-    if (productName && ct > 0 && cap > 0) {
-      onSave(productName, ct, cap)
+    if (bayName && productName && ct > 0 && cap > 0) {
+      onSave(bayName, productName, ct, cap)
     }
   }
 
@@ -39,6 +41,19 @@ export function StaticBayConfigPanel({ onSave, onCancel, initialData }: StaticBa
       </div>
 
       <div className="flex-1 overflow-auto p-6 space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="bay-name" className="text-xs uppercase tracking-wider font-medium">
+            Bay Name
+          </Label>
+          <Input
+            id="bay-name"
+            value={bayName}
+            onChange={(e) => setBayName(e.target.value)}
+            placeholder="e.g., Bay Alpha, North Wing Bay 1"
+          />
+          <p className="text-xs text-muted-foreground">Unique identifier for this physical bay</p>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="product-name" className="text-xs uppercase tracking-wider font-medium">
             Product Name

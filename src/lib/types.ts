@@ -7,6 +7,7 @@ export interface Position {
 
 export interface StaticBayConfig {
   type: 'static'
+  bayName: string
   productName: string
   cycleTime: number
   capacity: number
@@ -17,6 +18,7 @@ export interface FlowLineConfig {
   lineName: string
   lineId: string
   stationTimings: number[]
+  stationNames: string[]
   taktTime: number
 }
 
@@ -42,4 +44,33 @@ export interface ThroughputMetrics {
   monthlyCapacity: number
   bottleneck?: string
   utilizationRate: number
+}
+
+export interface BottleneckStation {
+  stationIndex: number
+  stationName: string
+  cycleTime: number
+  idleTimePerCycle: number
+  utilizationPct: number
+  isBottleneck: boolean
+}
+
+export type SuggestionType = 'rebalance' | 'add-capacity' | 'reduce-cycle-time' | 'combine-stations'
+export type SuggestionPriority = 'high' | 'medium' | 'low'
+
+export interface ImprovementSuggestion {
+  priority: SuggestionPriority
+  type: SuggestionType
+  description: string
+  estimatedGain: string
+}
+
+export interface BottleneckReport {
+  lineId?: string
+  lineName: string
+  stations: BottleneckStation[]
+  currentThroughput: number
+  targetThroughput?: number
+  bottleneckStationName?: string
+  suggestions: ImprovementSuggestion[]
 }

@@ -3,15 +3,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { X, Check, Plus, Trash } from '@phosphor-icons/react'
+import { X, Check } from '@phosphor-icons/react'
 
 interface FlowLineConfigPanelProps {
   stationCount: number
-  onSave: (lineName: string, stationTimings: number[], taktTime: number) => void
+  onSave: (lineName: string, stationTimings: number[], stationNames: string[], taktTime: number) => void
   onCancel: () => void
   initialData?: {
     lineName: string
     stationTimings: number[]
+    stationNames: string[]
     taktTime: number
   }
 }
@@ -21,6 +22,9 @@ export function FlowLineConfigPanel({ stationCount, onSave, onCancel, initialDat
   const [stationTimings, setStationTimings] = useState<string[]>(
     initialData?.stationTimings.map(t => t.toString()) || Array(stationCount).fill('5')
   )
+  const [stationNames, setStationNames] = useState<string[]>(
+    initialData?.stationNames || Array(stationCount).fill('')
+  )
   const [taktTime, setTaktTime] = useState(initialData?.taktTime.toString() || '10')
 
   const handleSave = () => {
@@ -28,7 +32,7 @@ export function FlowLineConfigPanel({ stationCount, onSave, onCancel, initialDat
     const takt = parseFloat(taktTime)
     
     if (lineName && timings.length === stationCount && takt > 0) {
-      onSave(lineName, timings, takt)
+      onSave(lineName, timings, stationNames, takt)
     }
   }
 
@@ -36,6 +40,12 @@ export function FlowLineConfigPanel({ stationCount, onSave, onCancel, initialDat
     const newTimings = [...stationTimings]
     newTimings[index] = value
     setStationTimings(newTimings)
+  }
+
+  const updateStationName = (index: number, value: string) => {
+    const newNames = [...stationNames]
+    newNames[index] = value
+    setStationNames(newNames)
   }
 
   return (
@@ -62,20 +72,32 @@ export function FlowLineConfigPanel({ stationCount, onSave, onCancel, initialDat
 
         <div className="space-y-2">
           <Label className="text-xs uppercase tracking-wider font-medium">
-            Station Timings (minutes)
+            Station Configuration
           </Label>
-          <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">Name each station and set its cycle time.</p>
+          <div className="space-y-4">
             {stationTimings.map((time, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <Label className="text-sm font-mono w-20">Station {index + 1}:</Label>
-                <Input
-                  type="number"
-                  min="0.1"
-                  step="0.1"
-                  value={time}
-                  onChange={(e) => updateStationTime(index, e.target.value)}
-                  className="font-mono flex-1"
-                />
+              <div key={index} className="border rounded-lg p-3 space-y-2 bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-semibold text-muted-foreground w-6">{index + 1}</span>
+                  <Input
+                    value={stationNames[index]}
+                    onChange={(e) => updateStationName(index, e.target.value)}
+                    placeholder={`Station ${index + 1} name`}
+                    className="flex-1 text-sm"
+                  />
+                </div>
+                <div className="flex items-center gap-2 pl-8">
+                  <Label className="text-xs text-muted-foreground whitespace-nowrap">Cycle time (min):</Label>
+                  <Input
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    value={time}
+                    onChange={(e) => updateStationTime(index, e.target.value)}
+                    className="font-mono w-24"
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -94,7 +116,7 @@ export function FlowLineConfigPanel({ stationCount, onSave, onCancel, initialDat
             onChange={(e) => setTaktTime(e.target.value)}
             className="font-mono"
           />
-          <p className="text-xs text-muted-foreground">Target time between units</p>
+          <p className="text-xs text-muted-foreground">Target time between units (customer demand rate)</p>
         </div>
       </div>
 
