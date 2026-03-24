@@ -4,12 +4,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { Toaster } from '@/components/ui/sonner'
-import { Factory, GridFour, ChartBar, CalendarBlank, Trash } from '@phosphor-icons/react'
+import { Factory, GridFour, ChartBar, CalendarBlank, Trash, ChartLineUp } from '@phosphor-icons/react'
 import { FactoryGrid } from '@/components/factory/FactoryGrid'
 import { StaticBayConfigPanel } from '@/components/factory/StaticBayConfigPanel'
 import { FlowLineConfigPanel } from '@/components/factory/FlowLineConfigPanel'
 import { ThroughputDisplay } from '@/components/factory/ThroughputDisplay'
 import { ScheduleView } from '@/components/factory/ScheduleView'
+import { BottleneckSimulator } from '@/components/factory/BottleneckSimulator'
 import { BayConfig } from '@/lib/types'
 import { calculateTotalThroughput, calculateStaticBayThroughput, calculateFlowLineThroughput, positionToKey, keyToPosition } from '@/lib/calculations'
 import { toast } from 'sonner'
@@ -45,7 +46,7 @@ function App() {
     setConfigMode('none')
   }
 
-  const handleStaticBayConfig = (productName: string, cycleTime: number, capacity: number) => {
+  const handleStaticBayConfig = (bayName: string, productName: string, cycleTime: number, capacity: number) => {
     if (selectedCells.size === 0) {
       toast.error('No cells selected')
       return
@@ -56,6 +57,7 @@ function App() {
       selectedCells.forEach(key => {
         updated[key] = {
           type: 'static',
+          bayName,
           productName,
           cycleTime,
           capacity,
@@ -68,7 +70,7 @@ function App() {
     clearSelection()
   }
 
-  const handleFlowLineConfig = (lineName: string, stationTimings: number[], taktTime: number) => {
+  const handleFlowLineConfig = (lineName: string, stationTimings: number[], stationNames: string[], taktTime: number) => {
     if (selectedCells.size === 0) {
       toast.error('No cells selected')
       return
@@ -84,6 +86,7 @@ function App() {
           lineName,
           lineId,
           stationTimings,
+          stationNames,
           taktTime,
         }
       })
@@ -124,7 +127,8 @@ function App() {
     const options: Array<{ id: string; name: string }> = []
     Object.entries(bays || {}).forEach(([key, config]) => {
       if (config.type === 'static') {
-        options.push({ id: key, name: `${config.productName} (${key})` })
+        const label = config.bayName ? `${config.bayName} — ${config.productName}` : `${config.productName} (${key})`
+        options.push({ id: key, name: label })
       } else if (config.type === 'flow') {
         const existing = options.find(o => o.id === config.lineId)
         if (!existing) {
@@ -150,7 +154,7 @@ function App() {
 
       <main className="container mx-auto px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-xl grid-cols-4">
             <TabsTrigger value="layout" className="gap-2">
               <GridFour className="h-4 w-4" />
               Layout
@@ -158,6 +162,10 @@ function App() {
             <TabsTrigger value="throughput" className="gap-2">
               <ChartBar className="h-4 w-4" />
               Throughput
+            </TabsTrigger>
+            <TabsTrigger value="simulate" className="gap-2">
+              <ChartLineUp className="h-4 w-4" />
+              Simulate
             </TabsTrigger>
             <TabsTrigger value="schedule" className="gap-2">
               <CalendarBlank className="h-4 w-4" />
@@ -218,16 +226,18 @@ function App() {
                 <div className="space-y-4">
                   {Object.entries(bays || {}).map(([key, config]) => {
                     if (config.type === 'static') {
-                      const metrics = calculateStaticBayThroughput(config.cycleTime, config.capacity)
+                      const m = calculateStaticBayThroughput(config.cycleTime, config.capacity)
                       return (
                         <div key={key} className="border rounded p-4 bg-[var(--static-bay)]/10">
                           <div className="flex justify-between items-start">
                             <div>
-                              <h3 className="font-semibold">{config.productName}</h3>
-                              <p className="text-sm text-muted-foreground">Bay {key} • Static Build</p>
+                              <h3 className="font-semibold">{config.bayName || config.productName}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {config.bayName ? `${config.productName} · ` : ''}Bay {key} · Static Build
+                              </p>
                             </div>
                             <div className="text-right">
-                              <div className="font-mono text-lg font-bold">{metrics.dailyCapacity}</div>
+                              <div className="font-mono text-lg font-bold">{m.dailyCapacity}</div>
                               <div className="text-xs text-muted-foreground">units/day</div>
                             </div>
                           </div>
@@ -238,22 +248,22 @@ function App() {
                         </div>
                       )
                     } else if (config.type === 'flow') {
-                      const metrics = calculateFlowLineThroughput(config.stationTimings, config.taktTime)
+                      const m = calculateFlowLineThroughput(config.stationTimings, config.taktTime)
                       return (
                         <div key={key} className="border rounded p-4 bg-[var(--flow-bay)]/10">
                           <div className="flex justify-between items-start">
                             <div>
                               <h3 className="font-semibold">{config.lineName}</h3>
-                              <p className="text-sm text-muted-foreground">Bay {key} • Flow Line</p>
+                              <p className="text-sm text-muted-foreground">Bay {key} · Flow Line</p>
                             </div>
                             <div className="text-right">
-                              <div className="font-mono text-lg font-bold">{metrics.dailyCapacity}</div>
+                              <div className="font-mono text-lg font-bold">{m.dailyCapacity}</div>
                               <div className="text-xs text-muted-foreground">units/day</div>
                             </div>
                           </div>
-                          {metrics.bottleneck && (
+                          {m.bottleneck && (
                             <div className="mt-2 text-sm text-accent">
-                              Bottleneck: {metrics.bottleneck}
+                              Bottleneck: {m.bottleneck}
                             </div>
                           )}
                         </div>
@@ -264,6 +274,10 @@ function App() {
                 </div>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="simulate" className="space-y-6">
+            <BottleneckSimulator bays={bays || {}} />
           </TabsContent>
 
           <TabsContent value="schedule">
