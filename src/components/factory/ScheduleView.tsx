@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useLocalStorage } from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,7 +17,7 @@ interface ScheduleViewProps {
 }
 
 export function ScheduleView({ bayOptions }: ScheduleViewProps) {
-  const [orders, setOrders] = useKV<ProductionOrder[]>('production-orders', [])
+  const [orders, setOrders] = useLocalStorage<ProductionOrder[]>('production-orders', [])
   const [productName, setProductName] = useState('')
   const [quantity, setQuantity] = useState('')
   const [selectedBay, setSelectedBay] = useState('')

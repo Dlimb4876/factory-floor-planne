@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useLocalStorage } from '@/hooks/use-local-storage'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
@@ -21,7 +21,7 @@ const GRID_COLS = 12
 type ConfigMode = 'none' | 'static' | 'flow'
 
 function App() {
-  const [bays, setBays] = useKV<Record<string, BayConfig>>('factory-bays', {})
+  const [bays, setBays] = useLocalStorage<Record<string, BayConfig>>('factory-bays', {})
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set())
   const [configMode, setConfigMode] = useState<ConfigMode>('none')
   const [activeTab, setActiveTab] = useState('layout')
